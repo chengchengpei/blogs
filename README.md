@@ -3,4 +3,4 @@ blogs about inference, training, llm, etc
 
 See the [post index](index.md).
 
-Latest: [How to Count Inference FLOPs from a Quantized Checkpoint](counting-inference-flops-from-a-quantized-checkpoint.md) *(WIP)*
+Latest: [WIP: How an Early NCCL Receive Turned CUDA Lazy Loading Into Pipeline Bubbles](wip-how-an-early-nccl-receive-created-pipeline-bubbles.md)

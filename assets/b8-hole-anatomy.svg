@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="610" viewBox="0 0 1200 610" role="img" aria-labelledby="title desc">
+  <title id="title">Anatomy of the B8 pipeline bubble</title>
+  <desc id="desc">A simplified trace reconstruction showing B8 waiting for B4, then an internal model-work hole while future B5 through B7 receives remain pending and the host is blocked in lazy CUDA function materialization.</desc>
+  <defs>
+    <style>
+      .title { font: 700 28px system-ui, sans-serif; fill: #172033; }
+      .subtitle { font: 16px system-ui, sans-serif; fill: #536078; }
+      .lane { font: 700 17px system-ui, sans-serif; fill: #172033; }
+      .label { font: 600 15px system-ui, sans-serif; fill: #172033; }
+      .small { font: 14px system-ui, sans-serif; fill: #536078; }
+      .inside { font: 600 14px system-ui, sans-serif; fill: #ffffff; }
+      .axis { stroke: #cad2df; stroke-width: 2; }
+      .guide { stroke: #dce2eb; stroke-width: 1; stroke-dasharray: 5 6; }
+      .model { fill: #2f6fed; }
+      .sample { fill: #7a5af8; }
+      .required { fill: #d97706; }
+      .future { fill: #dc5a5a; }
+      .host { fill: #8a5cf5; }
+      .hole { fill: #fff4e5; stroke: #d97706; stroke-width: 2; stroke-dasharray: 8 5; }
+      .callout { fill: #ffffff; stroke: #cad2df; stroke-width: 1.5; }
+      .arrow { stroke: #536078; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#536078"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="610" fill="#ffffff"/>
+  <text x="40" y="48" class="title">Why B8 had two different delays</text>
+  <text x="40" y="76" class="subtitle">Simplified reconstruction from the trace; timing is illustrative, not to scale.</text>
+
+  <text x="40" y="142" class="lane">PP3 GPU</text>
+  <text x="40" y="252" class="lane">PP0 GPU</text>
+  <text x="40" y="362" class="lane">PP0 host</text>
+
+  <line x1="165" y1="145" x2="1150" y2="145" class="axis"/>
+  <line x1="165" y1="255" x2="1150" y2="255" class="axis"/>
+  <line x1="165" y1="365" x2="1150" y2="365" class="axis"/>
+
+  <line x1="445" y1="102" x2="445" y2="410" class="guide"/>
+  <line x1="585" y1="102" x2="585" y2="410" class="guide"/>
+  <line x1="790" y1="102" x2="790" y2="410" class="guide"/>
+  <line x1="1010" y1="102" x2="1010" y2="410" class="guide"/>
+
+  <rect x="235" y="118" width="210" height="54" rx="8" class="model"/>
+  <text x="340" y="151" text-anchor="middle" class="inside">B4 model + sampling</text>
+
+  <rect x="445" y="118" width="140" height="54" rx="8" class="sample"/>
+  <text x="515" y="151" text-anchor="middle" class="inside">B4 source</text>
+
+  <rect x="585" y="118" width="425" height="54" rx="8" fill="#e8ecf3"/>
+  <text x="797" y="151" text-anchor="middle" class="label">Later B5–B7 source collectives</text>
+
+  <rect x="200" y="228" width="245" height="54" rx="8" class="required"/>
+  <text x="322" y="251" text-anchor="middle" class="inside">B8 waits for B4</text>
+  <text x="322" y="269" text-anchor="middle" class="inside">required dependency</text>
+
+  <rect x="445" y="228" width="140" height="54" rx="8" class="model"/>
+  <text x="515" y="260" text-anchor="middle" class="inside">queued B8 work</text>
+
+  <rect x="585" y="217" width="425" height="76" rx="8" class="hole"/>
+  <text x="797" y="250" text-anchor="middle" class="label">visible B8 model-stream hole</text>
+  <text x="797" y="272" text-anchor="middle" class="small">no new model kernels are submitted</text>
+
+  <rect x="1010" y="228" width="120" height="54" rx="8" class="model"/>
+  <text x="1070" y="260" text-anchor="middle" class="inside">B8 resumes</text>
+
+  <rect x="500" y="338" width="510" height="54" rx="8" class="host"/>
+  <text x="755" y="361" text-anchor="middle" class="inside">first-use CUDA function materialization</text>
+  <text x="755" y="380" text-anchor="middle" class="inside">host blocked in cuKernelSetAttribute</text>
+
+  <rect x="585" y="432" width="425" height="48" rx="8" class="future"/>
+  <text x="797" y="462" text-anchor="middle" class="inside">future B5–B7 receives remain pending on PP0</text>
+
+  <path d="M515 180 L515 217" class="arrow"/>
+  <text x="530" y="204" class="small">B4 becomes ready</text>
+
+  <path d="M790 432 L790 397" class="arrow"/>
+  <text x="808" y="418" class="small">outstanding GPU work exposes the setup stall</text>
+
+  <rect x="170" y="520" width="960" height="62" rx="10" class="callout"/>
+  <circle cx="205" cy="551" r="10" class="required"/>
+  <text x="225" y="557" class="small">B4 wait: necessary for correctness</text>
+  <circle cx="515" cy="551" r="10" class="future"/>
+  <text x="535" y="557" class="small">B5–B7 receives: not consumed by B8</text>
+  <rect x="850" y="541" width="20" height="20" rx="3" class="hole"/>
+  <text x="882" y="557" class="small">exposed host-side stall</text>
+</svg>
