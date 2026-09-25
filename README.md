@@ -1,5 +1,4 @@
 # blogs
-blogs about inference, training, llm, etc
 
 See the [post index](index.md).
 
