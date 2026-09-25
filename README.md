@@ -3,4 +3,4 @@ blogs about inference, training, llm, etc
 
 See the [post index](index.md).
 
-Latest: [WIP: How an Early NCCL Receive Turned CUDA Lazy Loading Into Pipeline Bubbles](wip-how-an-early-nccl-receive-created-pipeline-bubbles.md)
+Latest: [Decode Share Is a Useful Predictor of DeepSeek-V4-Flash Throughput](decode_share_throughput.md)
