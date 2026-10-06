@@ -17,7 +17,7 @@ two distinct effects:
 This post explains how we separated those effects, proved the second one with
 a controlled experiment, and fixed the scheduling problem.
 
-The evidence comes from several production traces, including two matched
+The evidence comes from several benchmark traces, including two matched
 before/after profile pairs, plus a controlled microbenchmark. All used the
 same deployment.
 
@@ -185,7 +185,7 @@ The result changed our interpretation:
 - A normal prewarmed kernel launch remained asynchronous while the receive was
   pending.
 
-The production and controlled experiments had the same release edge: the
+The benchmark and controlled experiments had the same release edge: the
 host API returned almost immediately after the outstanding GPU operation
 finished.
 
@@ -271,8 +271,7 @@ separate cache directories.
 | Immediate control | 2,401.6 | 13,763.0 | 4,000 | 0 |
 | Automatic deferred | 3,344.9 | 19,169.0 | 4,000 | 0 |
 
-Both output and total token throughput improved by **39.3%**. The benchmark
-client jobs were `2452318` (deferred) and `2452320` (immediate control).
+Both output and total token throughput improved by **39.3%**.
 This is a separate end-to-end measurement from the earlier matched profiles
 used to explain the pipeline holes above.
 
