@@ -1,4 +1,4 @@
-# WIP: How an Early NCCL Receive Turned CUDA Lazy Loading Into Pipeline Bubbles
+# WIP: Reducing K3 Pipeline Bubbles by Deferring NCCL Receives
 
 A small pipeline-parallel feedback message created model-work gaps up to about
 a second long. Moving its receiver-side NCCL collective from before the
@@ -20,6 +20,12 @@ a controlled experiment, and fixed the scheduling problem.
 The evidence comes from several production traces, including two matched
 before/after profile pairs, plus a controlled microbenchmark. All used the
 same deployment.
+
+The implementation is proposed in
+[vLLM PR #53948: Defer sampled-result receives](https://github.com/vllm-project/vllm/pull/53948).
+A separate, latest matched K3 throughput benchmark measured a **39.3%**
+improvement in output tokens per second; its conditions and provenance are
+recorded below.
 
 ## The surprising pipeline hole
 
@@ -224,6 +230,37 @@ changed when that setup became visible: useful model work had already been
 queued, so GPU execution covered the host-side latency. The calls returned near
 the tail of useful compute instead of the tail of a long waiting receive, and
 no receive-aligned model hole appeared.
+
+## Latest K3 throughput benchmark
+
+On October 3, 2026, we compared automatic deferred receives with a forced
+immediate-receive control on H100 GPUs using TP8/PP4, Model Runner V2, async
+scheduling, CUDA graphs, and concurrency 710. Each arm processed the same
+4,000 requests, with 615 input tokens and 130 output tokens per request, using
+separate cache directories.
+
+| Receive mode | Output tokens/s | Total tokens/s | Completed requests | Failed requests |
+|---|---:|---:|---:|---:|
+| Immediate control | 2,401.6 | 13,763.0 | 4,000 | 0 |
+| Automatic deferred | 3,344.9 | 19,169.0 | 4,000 | 0 |
+
+Both output and total token throughput improved by **39.3%**. The benchmark
+client jobs were `2452318` (deferred) and `2452320` (immediate control).
+This is a separate end-to-end measurement from the earlier matched profiles
+used to explain the pipeline holes above.
+
+Both images used base commit `1a001d584244bd21829a5e5bd4a376ea141c0ce3`
+and PR source head `81039f0621704f4a6ca426d5eae05dd8573d88d3`, with the
+control forcing immediate receives. The base already contains
+[vLLM PR #58542](https://github.com/vllm-project/vllm/pull/58542), which skips
+sampled-token broadcasts for final prefill chunks when the request has no
+remaining generation budget, such as `max_tokens=1`. Our 130-output-token
+workload still needs feedback for subsequent decoding. The measured gain is
+therefore **on top of that fix**, not against a baseline missing it.
+
+The earlier matched benchmark reported a 38.5% improvement on an earlier
+revision. The latest measurement is 39.3%; neither result is a guarantee for
+other workloads or deployment configurations.
 
 ## Why not enable eager CUDA loading globally?
 
