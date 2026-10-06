@@ -1,4 +1,4 @@
-# WIP: Reducing K3 Pipeline Bubbles by Deferring NCCL Receives
+# WIP: Boosting K3 Throughput by up to 38.5% with Deferred NCCL Receives
 
 A small pipeline-parallel feedback message created model-work gaps up to about
 a second long. Moving its receiver-side NCCL collective from before the
@@ -23,9 +23,12 @@ same deployment.
 
 The implementation is proposed in
 [vLLM PR #53948: Defer sampled-result receives](https://github.com/vllm-project/vllm/pull/53948).
-A separate, latest matched K3 throughput benchmark measured a **39.3%**
-improvement in output tokens per second; its conditions and provenance are
-recorded below.
+The gains depend on the workload and comparison baseline. An earlier
+three-workload sweep measured **11.1–30.7%** higher throughput after combining
+receive scheduling with layer rebalancing. A separate matched receive-only
+comparison measured **38.5%**, and its October 3 repeat measured **39.3%**.
+The conditions and distinct baselines are recorded below; these are measured
+results, not a promised gain for every deployment.
 
 ## The surprising pipeline hole
 
@@ -231,7 +234,31 @@ queued, so GPU execution covered the host-side latency. The calls returned near
 the tail of useful compute instead of the tail of a long waiting receive, and
 no receive-aligned model hole appeared.
 
-## Latest K3 throughput benchmark
+## Achievements across three workloads
+
+In the earlier three-workload tuning sweep, the final configuration combined
+the **delay-3 receive**, launch **after model work**, and the
+**23,24,23,23** layer partition across the four PP stages. It produced the
+best measured result in that sweep for all three workloads.
+
+Each throughput cell below is **output tokens/s/node (total tokens/s/node)**,
+normalized over the four-node TP8/PP4 deployment.
+
+| Workload: client input/output tokens | After initial configuration tuning | Delay-3 patch | Final: delay-3 + post-model launch + layer rebalance | Final gain over initial tuning |
+|---|---:|---:|---:|---:|
+| W1: 527 / 130 | 634.7 (3,637.3) | 746.5 (4,277.9) | 829.5 (4,753.6) | +30.7% |
+| W2: 1,000 / 3,000 | 982.9 (1,339.4) | 1,026.1 (1,398.2) | 1,127.8 (1,536.8) | +14.7% |
+| W3: 100 / 32,000 | 429.0 (431.6) | 452.2 (454.8) | 476.5 (479.3) | +11.1% |
+
+The Kimi K3 chat template added **88 input tokens** in these tests. The actual
+server-side input lengths were therefore 615, 1,088, and 188 tokens for W1,
+W2, and W3, respectively; total token throughput includes that overhead.
+
+These **11.1–30.7%** improvements include layer rebalancing as well as receive
+scheduling. They should not be attributed to the receive patch alone or
+combined with the percentages from the separate matched comparisons below.
+
+## Latest matched receive-only K3 benchmark
 
 On October 3, 2026, we compared automatic deferred receives with a forced
 immediate-receive control on H100 GPUs using TP8/PP4, Model Runner V2, async
